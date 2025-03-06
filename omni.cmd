@@ -54,7 +54,7 @@ if not "%option:~0,1%"=="." (
 
 :: Because the Start Menu passes the complete file path,
 :: while the command line just passes the file name.
-if /i "%name%"=="%fullname%.cmd" (
+if /i "%name%"=="%fullname%" (
     start "" cmd /k
 )
 
@@ -83,7 +83,7 @@ echo   omni ^<script^> ^<scriptBase^> ^<destination^> [option]
 echo.
 echo PARAMETERS:
 echo   ^<script^>      : Full path of this script (e.g., %%~0).
-echo   ^<scriptBase^>  : Base name of the script (e.g., %%~dpn0).
+echo   ^<scriptBase^>  : Base name of the script (e.g., %%~dpnx0).
 echo   ^<destination^> : Folder to navigate to. This folder will be created if it does not already exist.
 echo   [option]        : Optional argument that determines the action.
 echo   [option_extras] : Optional argument that complements an option.
@@ -108,18 +108,18 @@ echo   When launched from the Start Menu, the first parameter may equal the scri
 echo   base name with a .cmd extension. In this case, a new command prompt window is opened.
 echo.
 echo EXAMPLES:
-echo   omni %%0 %%~dpn0 %%dest%% %%1
+echo   omni %%0 %%~dpnx0 %%dest%% %%1
 echo       - Change to the destination folder (%%dest%%).
-echo   omni %%0 %%~dpn0 %%dest%% -s
+echo   omni %%0 %%~dpnx0 %%dest%% -s
 echo       - Open the destination folder in the file explorer.
 echo         (The current directory remains set to %%dest%%.)
-echo   omni %%0 %%~dpn0 %%dest%% -n
+echo   omni %%0 %%~dpnx0 %%dest%% -n
 echo       - Open the destination folder in Nvim.
 echo         (The script then returns to the original directory.)
-echo   omni %%0 %%~dpn0 %%dest%% -c
+echo   omni %%0 %%~dpnx0 %%dest%% -c
 echo       - Copy the current directory path to the clipboard.
 echo         (The current directory remains set to %%dest%%.)
-echo   omni %%0 %%~dpn0 %%dest%% myfile.txt
+echo   omni %%0 %%~dpnx0 %%dest%% myfile.txt
 echo       - Open "myfile.txt" in Nvim.
 echo         (The script returns to the original directory after launching Nvim.)
 pause >nul
