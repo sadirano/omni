@@ -33,7 +33,7 @@ scoop install omni
 ### Basic Usage
 
 ```
-omni %0 %~dpn0 destination [option]
+omni destination [option]
 ```
 
 - **%0:** Full path of the script.
@@ -53,12 +53,12 @@ omni %0 %~dpn0 destination [option]
 ### Examples
 
 ```
-omni %0 %~dpn0 myFolder
-omni %0 %~dpn0 myFolder -s
-omni %0 %~dpn0 myFolder -n
-omni %0 %~dpn0 myFolder myfile.txt
-omni %0 %~dpn0 myFolder / search_text
-omni %0 %~dpn0 myFolder \ search_file_name
+omni myFolder
+omni myFolder -s
+omni myFolder -n
+omni myFolder myfile.txt
+omni myFolder / search_text
+omni myFolder \ search_file_name
 ```
 
 ## Requirements
