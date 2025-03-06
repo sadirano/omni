@@ -16,6 +16,18 @@ Omni is a Windows batch script designed to simplify folder navigation and file m
 
 ## Installation
 
+### Prerequisites
+- Windows operating system.
+- [Scoop](https://scoop.sh/): The scripts can be installed via a Scoop bucket for easier management.
+
+### Installation via Scoop
+
+A Scoop manifest will be available in the [bucket repository](https://github.com/sadirano/bucket.git). Once added, you can install Noir Core Utility Scripts using:
+```bash
+scoop bucket add sadirano https://github.com/sadirano/bucket.git
+scoop install omni
+```
+
 ## Usage
 
 ### Basic Usage
