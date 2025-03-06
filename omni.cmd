@@ -20,8 +20,7 @@ if defined dest_%destination_arg% echo !dest_%destination_arg%! > %temp_dest%
 endlocal
 :: Isolate 
 
-if exist %temp_dest% set /p destination=<%temp_dest% 
-del %temp_dest% 
+if exist %temp_dest% set /p destination=<%temp_dest% & del %temp_dest%
 if not defined destination set destination=%destination_arg%
 
 mkdir %destination% 2>nul
