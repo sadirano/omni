@@ -18,6 +18,14 @@ if ""=="%~1" (
 
 :: Initialize variables based on positional arguments
 set destination_arg=%~1
+
+
+for /f "tokens=1,2 delims=@ " %%a in ("%destination_arg%") do set alias=%%a&set destination=%%b
+if defined destination (
+    echo %alias%=%destination%>>%alias_list%
+    exit /b 0
+)
+
 set option=%2
 set option_extras=%3
 
@@ -31,12 +39,6 @@ endlocal
 :: Isolate 
 
 if exist %temp_dest% set /p destination=<%temp_dest% & del %temp_dest%
-
-if not defined destination (
-    echo _%~n1=%~1>>%alias_list%
-    nvim %alias_list%
-    exit /b 0
-)
 
 mkdir %destination% 2>nul
 pushd %destination%
