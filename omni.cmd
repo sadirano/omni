@@ -42,8 +42,10 @@ mkdir %destination% 2>nul
 pushd %destination%
 
 
-if /i "%option%"=="-s" (
-    start . & goto :EOF
+if /i "%option%"=="-e" (
+    start .
+    popd
+    goto :EOF
 )
 
 if /i "%option%"=="-n" (
@@ -68,7 +70,6 @@ if /i "%option%"=="\" (
 
 if /i "%option%"=="-f" (
     nvim "%option_extras%"
-    popd
     goto :EOF
 )
 
@@ -85,7 +86,7 @@ set fzfCmd=fzf --bind "enter:become(nvim {}),ctrl-e:become(start {})"
 goto :EOF
 
 :searchFile
-set esCmd=es -p -parent-path %destination% %option_extras%
+set esCmd=es -p -path "%cd%" %option_extras%
 set fzfCmd=fzf --bind "enter:become(nvim {}),ctrl-e:become(start explorer {})"
 %esCmd% | %fzfCmd%
 goto :EOF
@@ -97,3 +98,7 @@ for /f "tokens=1,2 delims==" %%a in ('findstr "=" %alias_list%') do (
     set "dest_%%a=%%b"
 )
 goto :EOF
+
+:backAndOut
+popd
+:goto :EOF
