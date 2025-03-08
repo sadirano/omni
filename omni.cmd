@@ -72,7 +72,7 @@ if /i "%option%"=="-f" (
     goto :EOF
 )
 
-if /i "%ComSpec%" neq %CMDCMDLINE% (
+if /i "%ComSpec%" neq "%CMDCMDLINE:"=%" (
     start "" cmd /k
 )
 
