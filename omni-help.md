@@ -1,57 +1,70 @@
-=======================================================
-        Omni Folder Navigation Utility Help
-=======================================================
+# Omni Script Help
 
-USAGE:
-  omni <script> <scriptBase> <destination> [option] [option_extras]
+The `omni.ps1` script is a PowerShell tool for managing directory aliases and performing actions like opening files, searching content, or running commands in those directories.
 
-PARAMETERS:
-  <script>       : Full path of the script (e.g., %~0).
-  <scriptBase>   : Base name of the script (e.g., %~dpnx0).
-  <destination>  : Folder to navigate to. This folder will be created if it does not already exist.
-  [option]       : Optional argument that determines the action.
-  [option_extras]: Optional argument to complement an option.
+## Usage
 
-OPTIONS:
-  -s    : Open the destination folder in the default file explorer.
-          NOTE: When using -s, the script leaves the current directory set to the destination folder.
-  -n    : Open the destination folder in Neovim (nvim).
-          NOTE: When using -n, the script returns to the original directory after launching nvim.
-  -c    : Copy the current directory path to the clipboard.
-          NOTE: When using -c, the current directory remains set to the destination folder.
-  / <text>
-         : Search for the provided text in files within the destination folder.
-         Allows the user to open the file in nvim interactively.
-  \ <text>
-         : Search for a file name and path in the destination folder.
-         Allows opening the file in nvim or Explorer interactively.
-  <filename>
-         : Open the specified file in nvim (provided the file name does not begin with a dot).
-         NOTE: The script returns to the original directory after launching nvim.
+### Register an Alias
+To associate a directory with an alias:
+```powershell
+.\omni.ps1 -a <alias> -d <destination>
+```
+- `-a <alias>`: The alias name to create or update.
+- `-d <destination>`: The full path to the directory.
 
-SPECIAL CASE:
-  When launched from the Start Menu, the first parameter may equal the script base name 
-  with a .cmd extension. In this case, a new command prompt window is opened.
+If the alias already exists, it will be updated with the new destination.
 
-EXAMPLES:
-  omni dest
-      - Change to the destination folder dest.
+### Navigate and Perform Actions
+To navigate to a directory using an alias and optionally perform an action:
+```powershell
+.\omni.ps1 <alias> [-switch] [extras]
+```
+- `<alias>`: The alias for the directory (required, positional).
+- `[-switch]`: An optional switch to specify the action (e.g., `-e`, `-n`).
+- `[extras]`: Additional arguments for certain actions (e.g., a file name for `-f`).
 
-  omni dest -s
-      - Open the dest folder in File Explorer.
+### Available Switches
+- `-e`: Open the directory in Windows Explorer.
+- `-n`: Open the directory in Neovim (`nvim`).
+- `-c`: Copy the current directory path to the clipboard.
+- `-searchContent <query>`: Search file contents using `rg` and `fzf`.
+- `-searchFiles <query>`: Search filenames using `es` and `fzf`.
+- `-f <file>`: Open a specific file in Neovim.
+- `-r <command>`: Run a custom command in the directory.
 
-  omni dest -n
-      - Open the dest folder in Neovim.
+**Note**: Only one switch can be used at a time. If no switch is provided, a command prompt (`cmd.exe`) opens in the directory.
 
-  omni dest -c
-      - Copy the dest folder path to the clipboard.
+### Additional Options
+- `-Subdir <path>`: Navigate to a subdirectory within the alias destination.
+- `-Help`: Display this help file.
 
-  omni dest myfile.txt
-      - Open "myfile.txt" in the dest folder in Neovim.
+### Examples
+- Register an alias:
+  ```powershell
+  .\omni.ps1 -a proj -d C:\Projects\MyProject
+  ```
+- Open in Explorer:
+  ```powershell
+  .\omni.ps1 proj -e
+  ```
+- Open a file in Neovim:
+  ```powershell
+  .\omni.ps1 proj -f readme.md
+  ```
+- Search file contents:
+  ```powershell
+  .\omni.ps1 proj -searchContent "function"
+  ```
+- Navigate to a subdirectory and open in Neovim:
+  ```powershell
+  .\omni.ps1 proj -Subdir src -n
+  ```
 
-  omni dest / sometext
-      - Search for "sometext" in the designed folder.
+### Requirements
+- **Tools**: `nvim`, `rg` (ripgrep), and `fzf` must be installed and available in your PATH.
+- **Platform**: Some features (e.g., `explorer.exe`) are Windows-specific. A warning will appear on non-Windows platforms.
 
-  omni dest \ myfile
-      - Search for "myfile" in the dest folder.
-
+### Notes
+- Aliases are stored in `aliases.txt` in the script’s directory.
+- If a destination directory doesn’t exist, it will be created automatically.
+- Use `-searchContent` and `-searchFiles` with `enter` to open in Neovim or `ctrl-e` for Explorer/start.

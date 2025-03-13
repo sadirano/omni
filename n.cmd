@@ -1,2 +1,2 @@
 @echo off
-omni %1 -n
+pwsh %~dp0\omni.ps1 %* -n
