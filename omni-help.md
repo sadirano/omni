@@ -26,9 +26,9 @@ To navigate to a directory using an alias and optionally perform an action:
 ### Available Switches
 - `-e`: Open the directory in Windows Explorer.
 - `-n`: Open the directory in Neovim (`nvim`).
-- `-c`: Copy the current directory path to the clipboard.
-- `-searchContent <query>`: Search file contents using `rg` and `fzf`.
-- `-searchFiles <query>`: Search filenames using `es` and `fzf`.
+- `-y`: Copy the current directory path to the clipboard.
+- `-sg <query>`: Search file contents using `rg` and `fzf`.
+- `-ff <query>`: Search filenames using `es` and `fzf`.
 - `-f <file>`: Open a specific file in Neovim.
 - `-r <command>`: Run a custom command in the directory.
 
@@ -53,7 +53,7 @@ To navigate to a directory using an alias and optionally perform an action:
   ```
 - Search file contents:
   ```powershell
-  .\omni.ps1 proj -searchContent "function"
+  .\omni.ps1 proj -sg "function"
   ```
 - Navigate to a subdirectory and open in Neovim:
   ```powershell
@@ -67,4 +67,4 @@ To navigate to a directory using an alias and optionally perform an action:
 ### Notes
 - Aliases are stored in `aliases.txt` in the script’s directory.
 - If a destination directory doesn’t exist, it will be created automatically.
-- Use `-searchContent` and `-searchFiles` with `enter` to open in Neovim or `ctrl-e` for Explorer/start.
+- Use `-sg` and `-ff` with `enter` to open in Neovim or `ctrl-e` for Explorer/start.

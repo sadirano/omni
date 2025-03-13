@@ -10,9 +10,9 @@ param(
     
     [switch]$e,
     [switch]$n,
-    [switch]$c,
-    [switch]$sc,
-    [switch]$sf,
+    [switch]$y,
+    [switch]$sg,
+    [switch]$ff,
     [switch]$f,
     [switch]$r,
     
@@ -34,7 +34,7 @@ if (-not (Test-Path $omni)) {
 $aliasFile = Join-Path $omni ".env"
 
 # Enforce single switch usage
-$switchCount = ($e, $n, $c, $sc, $sf, $f, $r).Where({ $_ }).Count
+$switchCount = ($e, $n, $y, $sg, $ff, $f, $r).Where({ $_ }).Count
 if ($switchCount -gt 1) {
     Write-Error "Only one option switch can be specified at a time."
     exit 1
@@ -174,9 +174,9 @@ function Perform-Action {
     switch ($effectiveOption) {
         "e" { Start-Process explorer.exe -ArgumentList "." }
         "n" { & nvim "." }
-        "c" { (Get-Location).Path | Out-String | Set-Clipboard }
-        "sc" { Search-Content $OptionExtras }
-        "sf" { Search-Files $OptionExtras }
+        "y" { (Get-Location).Path | Out-String | Set-Clipboard }
+        "sg" { Search-Content $OptionExtras }
+        "ff" { Search-Files $OptionExtras }
         "f" { & nvim $OptionExtras }
         "r" { Invoke-Expression $OptionExtras }
         default { & cmd.exe }
@@ -202,9 +202,9 @@ if ($Help) {
     # Determine effective option
     if ($e) { $effectiveOption = "e" }
     elseif ($n) { $effectiveOption = "n" }
-    elseif ($c) { $effectiveOption = "c" }
-    elseif ($sc) { $effectiveOption = "sc" }
-    elseif ($sf) { $effectiveOption = "sf" }
+    elseif ($y) { $effectiveOption = "y" }
+    elseif ($sg) { $effectiveOption = "sg" }
+    elseif ($ff) { $effectiveOption = "ff" }
     elseif ($f) { $effectiveOption = "f" }
     elseif ($r) { $effectiveOption = "r" }
     else { $effectiveOption = "default" }

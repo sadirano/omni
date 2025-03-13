@@ -1,2 +1,2 @@
 @echo off
-pwsh %~dp0\omni.ps1 %* -c
+pwsh %~dp0\omni.ps1 %* -y
