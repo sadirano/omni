@@ -78,12 +78,12 @@ function Resolve-Destination {
         if ($entry) {
             return $entry -replace "^$Alias=", ""
         } else {
-            $destination = Read-Host "Provide destination for alias '$Alias'."
+            $destination = Read-Host "Destination"
             "$Alias=$destination" | Out-File -FilePath $aliasFile -Append
             return $destination
         }
     } else {
-        $destination = Read-Host "Provide destination for alias '$Alias'."
+        $destination = Read-Host "Destination"
         "$Alias=$destination" | Out-File -FilePath $aliasFile
         return $destination
     }
