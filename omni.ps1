@@ -189,6 +189,9 @@ if ($Help) {
     exit
 } elseif ($Alias -and $Destination) {
     Register-Alias -Alias $Alias -Destination $Destination
+} elseif (!$Alias) {
+  & $env:EDITOR $aliasFile
+    exit 0
 } else {
     $destination = Resolve-Destination -Alias $Alias
     if ($Subdir) {
