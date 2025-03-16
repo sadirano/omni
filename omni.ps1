@@ -100,9 +100,9 @@ function Resolve-Destination {
             exit 1
         }
     } else {
-        Write-Error "Alias file not found."
-        Read-Host "Press Enter to continue..."
-        exit 1
+        $destination = Read-Host "Please provide a destination for the alias '$Alias'."
+        "$Alias=$destination" | Out-File -FilePath $aliasFile
+        return $destination
     }
 }
 
