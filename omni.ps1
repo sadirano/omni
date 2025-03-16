@@ -78,29 +78,12 @@ function Resolve-Destination {
         if ($entry) {
             return $entry -replace "^$Alias=", ""
         } else {
-            # No exact match, so find close matches
-            $existingAliases = $entries | ForEach-Object { ($_ -split '=')[0] }
-            $distances = @{}
-            foreach ($existing in $existingAliases) {
-                $distances[$existing] = Get-LevenshteinDistance $Alias $existing
-            }
-            
-            # Get the top 3 closest matches
-            $closest = $distances.GetEnumerator() | Sort-Object Value | Select-Object -First 3
-            $suggestions = $closest | ForEach-Object { $_.Key }
-            
-            # Display the error and suggestions
-            Write-Warning "No matching alias found for '$Alias'."
-            if ($suggestions) {
-                Write-Host "Did you mean one of these? $($suggestions -join ', ')"
-            }
-            
-            # Pause for user input
-            Read-Host "Press Enter to continue..."
-            exit 1
+            $destination = Read-Host "Provide destination for alias '$Alias'."
+            "$Alias=$destination" | Out-File -FilePath $aliasFile -Append
+            return $destination
         }
     } else {
-        $destination = Read-Host "Please provide a destination for the alias '$Alias'."
+        $destination = Read-Host "Provide destination for alias '$Alias'."
         "$Alias=$destination" | Out-File -FilePath $aliasFile
         return $destination
     }
