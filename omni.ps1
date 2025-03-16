@@ -41,7 +41,7 @@ if ($switchCount -gt 1) {
 }
 
 # Check for required external commands
-$requiredCommands = @("nvim", "rg", "fzf")
+$requiredCommands = @("$env:EDITOR", "rg", "fzf")
 foreach ($cmd in $requiredCommands) {
     if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
         Write-Error "$cmd is not installed or not found in the PATH."
@@ -154,7 +154,7 @@ function Search-Content {
       }
     }
     if ($filePath -and $lineNumber) {
-      & ($env:EDITOR).Trim("`"'") $filePath +$lineNumber
+      & ($env:EDITOR) $filePath +$lineNumber
     } else {
       Write-Error "Failed to parse file path and line number from: $result"
     }
@@ -165,7 +165,7 @@ function Search-Content {
 function Search-Files {
     param([string]$query)
     $currentDir = (Get-Location).Path
-    es -p -path $currentDir $query | fzf --bind 'enter:become(nvim {}),ctrl-e:become(start explorer {})'
+    es -p -path $currentDir $query | fzf --bind "enter:become($env:EDITOR {}),ctrl-e:become(start explorer {})"
 }
 
 # Function to perform the specified action
@@ -173,11 +173,11 @@ function Perform-Action {
     param([string]$effectiveOption, [string]$OptionExtras)
     switch ($effectiveOption) {
         "e" { Start-Process explorer.exe -ArgumentList "." }
-        "n" { & nvim "." }
+        "n" { & $env:EDITOR "." }
         "y" { (Get-Location).Path | Out-String | Set-Clipboard }
         "sg" { Search-Content $OptionExtras }
         "ff" { Search-Files $OptionExtras }
-        "f" { & nvim $OptionExtras }
+        "f" { & $env:EDITOR $OptionExtras }
         "r" { Invoke-Expression $OptionExtras }
         default { & cmd.exe }
     }
