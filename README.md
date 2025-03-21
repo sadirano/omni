@@ -27,9 +27,17 @@ Omni is a PowerShell script designed to simplify folder navigation and file mana
 
 A Scoop manifest is available in the [bucket repository](https://github.com/sadirano/bucket.git). To install Omni, run the following commands:
 
+Full install:
 ```bash
+scoop bucket add extras
 scoop bucket add sadirano https://github.com/sadirano/bucket.git
 scoop install omni
+```
+
+Core install: (Optional features won't work)
+```bash
+scoop bucket add sadirano https://github.com/sadirano/bucket.git
+scoop install omni-min
 ```
 
 ## Usage
