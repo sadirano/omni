@@ -12,6 +12,7 @@ param(
     [switch]$n,
     [switch]$y,
     [switch]$sg,
+    [switch]$sga,
     [switch]$ff,
     [switch]$f,
     [switch]$r,
@@ -34,19 +35,10 @@ if (-not (Test-Path $omni)) {
 $aliasFile = Join-Path $omni ".env"
 
 # Enforce single switch usage
-$switchCount = ($e, $n, $y, $sg, $ff, $f, $r).Where({ $_ }).Count
+$switchCount = ($e, $n, $y, $sg, $sga, $ff, $f, $r).Where({ $_ }).Count
 if ($switchCount -gt 1) {
     Write-Error "Only one option switch can be specified at a time."
     exit 1
-}
-
-# Check for required external commands
-$requiredCommands = @("$env:EDITOR", "rg", "fzf")
-foreach ($cmd in $requiredCommands) {
-    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
-        Write-Error "$cmd is not installed or not found in the PATH."
-        exit 1
-    }
 }
 
 # Function to register an alias
@@ -89,39 +81,12 @@ function Resolve-Destination {
     }
 }
 
-function Get-LevenshteinDistance {
-    param (
-        [string]$str1,
-        [string]$str2
-    )
-    $len1 = $str1.Length
-    $len2 = $str2.Length
-
-    # Initialize a jagged array
-    $matrix = New-Object 'int[][]' ($len1 + 1)
-    for ($i = 0; $i -le $len1; $i++) {
-        $matrix[$i] = New-Object 'int[]' ($len2 + 1)
-        $matrix[$i][0] = $i
-    }
-    for ($j = 0; $j -le $len2; $j++) {
-        $matrix[0][$j] = $j
-    }
-
-    # Fill the matrix
-    for ($i = 1; $i -le $len1; $i++) {
-        for ($j = 1; $j -le $len2; $j++) {
-            $cost = if ($str1[$i - 1] -eq $str2[$j - 1]) { 0 } else { 1 }
-            $matrix[$i][$j] = [Math]::Min(
-                [Math]::Min($matrix[$i - 1][$j] + 1, $matrix[$i][$j - 1] + 1),
-                $matrix[$i - 1][$j - 1] + $cost
-            )
-        }
-    }
-    return $matrix[$len1][$len2]
-}
-
 function Search-Content {
-  $result = rg --ignore-case --color=always --line-number --no-heading @Args |
+  param (
+      [string]$rg,
+      [string]$extras
+  )
+  $result = & $rg --ignore-case --color=always --line-number --no-heading $extras |
     fzf --ansi `
     --color 'hl:-1:underline,hl+:-1:underline:reverse' `
     --delimiter ':' `
@@ -158,7 +123,8 @@ function Perform-Action {
         "e" { Start-Process explorer.exe -ArgumentList "." }
         "n" { & $env:EDITOR "." }
         "y" { (Get-Location).Path | Out-String | Set-Clipboard }
-        "sg" { Search-Content $OptionExtras }
+        "sg" { Search-Content rg $OptionExtras }
+        "sga" { Search-Content rga $OptionExtras }
         "ff" { Search-Files $OptionExtras }
         "f" { & $env:EDITOR $OptionExtras }
         "r" { Invoke-Expression $OptionExtras }
@@ -190,6 +156,7 @@ if ($Help) {
     elseif ($n) { $effectiveOption = "n" }
     elseif ($y) { $effectiveOption = "y" }
     elseif ($sg) { $effectiveOption = "sg" }
+    elseif ($sga) { $effectiveOption = "sga" }
     elseif ($ff) { $effectiveOption = "ff" }
     elseif ($f) { $effectiveOption = "f" }
     elseif ($r) { $effectiveOption = "r" }
