@@ -20,6 +20,9 @@ param(
     [Parameter(Position=1)]
     [Alias("x")]
     [string]$OptionExtras,
+
+    [Parameter(ValueFromRemainingArguments=$true)]
+    [string[]]$ExtraArgs,
     
     [Alias("s")]
     [string]$Subdir,
@@ -27,131 +30,171 @@ param(
     [switch]$Help
 )
 
-# Set up the omni directory and alias file
-$omni = Join-Path $env:USERPROFILE ".omni"
-if (-not (Test-Path $omni)) {
-    New-Item -ItemType Directory -Path $omni | Out-Null
-}
-$aliasFile = Join-Path $omni ".env"
+function Measure-Block {
+    param(
+        [string]$Name,
+        [scriptblock]$Script
+    )
 
-# Enforce single switch usage
-$switchCount = ($e, $n, $y, $sg, $sga, $ff, $f, $r).Where({ $_ }).Count
-if ($switchCount -gt 1) {
-    Write-Error "Only one option switch can be specified at a time."
-    exit 1
-}
+    if (-not $Script:BenchmarkEnabled) {
+        return & $Script
+    }
 
-# Function to register an alias
-function Register-Alias {
-    param([string]$Alias, [string]$Destination)
-    if (Test-Path $aliasFile) {
-        $existingAliases = Get-Content $aliasFile
-        if ($existingAliases -match "^$Alias=") {
-            Write-Warning "Alias '$Alias' already exists. Updating destination."
-            $existingAliases -replace "^$Alias=.*", "$Alias=$Destination" | Set-Content $aliasFile
-        } else {
-            "$Alias=$Destination" | Out-File -FilePath $aliasFile -Append
-        }
-    } else {
-        "$Alias=$Destination" | Out-File -FilePath $aliasFile
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        return & $Script
+    }
+    finally {
+        $sw.Stop()
+        Write-Host ("[BENCH] {0} took {1} ms" -f $Name, $sw.Elapsed.TotalMilliseconds)
     }
 }
 
+# ------------------------------------------------------------
+# Initialization
+# ------------------------------------------------------------
+$script:omni = Join-Path $env:USERPROFILE ".omni"
+$script:aliasFile = Join-Path $script:omni ".env"
+
+# ------------------------------------------------------------
+# Alias Management
+# ------------------------------------------------------------
+function Register-Alias {
+    param([string]$Alias, [string]$Destination)
+
+    Measure-Block "Register-Alias" {
+        if (Test-Path $aliasFile) {
+            $existingAliases = Get-Content $aliasFile
+            if ($existingAliases -match "^$Alias=") {
+                Write-Warning "Alias '$Alias' already exists. Updating destination."
+                $existingAliases -replace "^$Alias=.*", "$Alias=$Destination" | Set-Content $aliasFile
+            } else {
+                "$Alias=$Destination" | Out-File -FilePath $aliasFile -Append
+            }
+        } else {
+            "$Alias=$Destination" | Out-File -FilePath $aliasFile
+        }
+    }
+}
 
 function Resolve-Destination {
     param ([string]$Alias)
-    
-    # Check if the alias file exists
-    if (Test-Path $aliasFile) {
-        $entries = Get-Content $aliasFile
-        $entry = $entries | Where-Object { $_ -match "^$Alias=" }
-        
-        # If an exact match is found, return the destination
-        if ($entry) {
-            return $entry -replace "^$Alias=", ""
-        } else {
-            $destination = Read-Host "Destination"
-            "$Alias=$destination" | Out-File -FilePath $aliasFile -Append
-            return $destination
+
+    Measure-Block "Resolve-Destination" {
+        if (Test-Path $aliasFile) {
+            foreach ($line in [System.IO.File]::ReadLines($aliasFile)) {
+                if ($line.StartsWith("$Alias=")) {
+                    return $line.Substring($Alias.Length + 1)
+                }
+            }
         }
-    } else {
+
         $destination = Read-Host "Destination"
-        "$Alias=$destination" | Out-File -FilePath $aliasFile
+        "$Alias=$destination" | Out-File -FilePath $aliasFile -Append
         return $destination
     }
 }
 
 function Search-Content {
-  param (
-      [string]$rg,
-      [string]$extras
-  )
-  $result = & $rg --ignore-case --color=always --line-number --no-heading $extras |
-    fzf --ansi `
-    --color 'hl:-1:underline,hl+:-1:underline:reverse' `
-    --delimiter ':' `
-    --preview "bat --color=always {1} --highlight-line {2}" `
-    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
-  if ($result) {
-    $parts = $result -split ':'
-    for ($i = 0; $i -lt $parts.Length; $i++) {
-      if ($parts[$i] -match '^\d+$') {
-        $filePath = $parts[0..($i-1)] -join ':'
-        $lineNumber = $parts[$i]
-        break
-      }
+    param(
+        [string] $rg,
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Extras
+    )
+
+    $results = & $rg --ignore-case --color=always --line-number --no-heading @Extras |
+        fzf --ansi --multi `
+            --color 'hl:-1:underline,hl+:-1:underline:reverse' `
+            --delimiter ':' `
+            --preview "bat --color=always {1} --highlight-line {2}" `
+            --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
+
+    if (-not $results) { return }
+
+    $nvimArgs = @()
+
+    foreach ($result in $results -split "`n") {
+
+        # Safe split (file:line:content)
+        $filePath, $lineNumber, $null = $result -split ":", 3
+
+        if (-not $filePath -or -not $lineNumber) {
+            Write-Warning "Skipping invalid line: $result"
+            continue
+        }
+
+        switch ($env:EDITOR) {
+            "nvim" {
+                $nvimArgs += "+$lineNumber"
+                $nvimArgs += "--"
+                $nvimArgs += "$filePath"
+            }
+            "code" {
+                code -g "$filePath`:$lineNumber"
+            }
+            default {
+                nvim "+$lineNumber" -- "$filePath"
+            }
+        }
     }
-    if ($filePath -and $lineNumber) {
-      & ($env:EDITOR) $filePath +$lineNumber
-    } else {
-      Write-Error "Failed to parse file path and line number from: $result"
+
+    if ($env:EDITOR -eq "nvim" -and $nvimArgs.Count -gt 0) {
+        nvim @nvimArgs
     }
-  }
 }
 
-# Function to search files
 function Search-Files {
     param([string]$query)
-    $currentDir = (Get-Location).Path
-    es -p -path $currentDir $query | fzf --bind "enter:become($env:EDITOR {}),ctrl-e:become(start explorer {})"
-}
 
-# Function to perform the specified action
-function Perform-Action {
-    param([string]$effectiveOption, [string]$OptionExtras)
-    switch ($effectiveOption) {
-        "e" { Start-Process explorer.exe -ArgumentList "." }
-        "n" { & $env:EDITOR "." }
-        "y" { (Get-Location).Path | Out-String | Set-Clipboard }
-        "sg" { Search-Content rg $OptionExtras }
-        "sga" { Search-Content rga $OptionExtras }
-        "ff" { Search-Files $OptionExtras }
-        "f" { & $env:EDITOR $OptionExtras }
-        "r" { Invoke-Expression $OptionExtras }
-        default { & cmd.exe }
+    Measure-Block "Search-Files" {
+        $currentDir = (Get-Location).Path
+        es -p -path $currentDir $query |
+            fzf --bind "enter:become($env:EDITOR {}),ctrl-e:become(start explorer {})"
     }
 }
 
-# Main logic
-if ($Help) {
-    Get-Content "$PSScriptRoot\omni-help.md"
-    exit
-} elseif ($Alias -and $Destination) {
-    Register-Alias -Alias $Alias -Destination $Destination
-} elseif (!$Alias) {
-  & $env:EDITOR $aliasFile
+function Perform-Action {
+    param(
+      [string]$effectiveOption, 
+      [Parameter(ValueFromRemainingArguments = $true)]
+      [string[]]$OptionExtras
+    )
+
+    Measure-Block "Perform-Action:$effectiveOption" {
+        switch ($effectiveOption) {
+            "e" { Start-Process explorer.exe -ArgumentList "." }
+            "n" { & $env:EDITOR "." }
+            "y" { (Get-Location).Path | Out-String | Set-Clipboard }
+            "sg" { Search-Content rg $OptionExtras }
+            "sga" { Search-Content rga $OptionExtras }
+            "ff" { Search-Files $OptionExtras }
+            "f" { & $env:EDITOR $OptionExtras }
+            "r" { Start-Process $OptionExtras -ArgumentList $ExtraArgs }
+            default { & cmd.exe }
+        }
+    }
+}
+
+# ------------------------------------------------------------
+# Main Logic
+# ------------------------------------------------------------
+if (!$Alias) {
+    & $env:EDITOR $aliasFile
     exit 0
-} else {
+}
+else {
     $destination = Resolve-Destination -Alias $Alias
+
     if ($Subdir) {
         $destination = Join-Path $destination $Subdir
     }
+
     if (-not (Test-Path $destination)) {
         New-Item -ItemType Directory -Path $destination | Out-Null
     }
+
     Set-Location $destination
 
-    # Determine effective option
     if ($e) { $effectiveOption = "e" }
     elseif ($n) { $effectiveOption = "n" }
     elseif ($y) { $effectiveOption = "y" }
